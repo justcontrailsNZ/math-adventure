@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Math Adventure Pro</title>
+
+<style>
+body{
+font-family:Arial;
+text-align:center;
+margin:0;
+padding:20px;
+background:#e9f6ff;
+transition:background 0.5s;
+}
+
+h1{margin-bottom:5px;}
+
+select,input,button{
+font-size:18px;
+padding:6px;
+margin:5px;
+}
+
+#character{font-size:70px;margin:10px;}
+#question{font-size:30px;margin:20px;}
+#reward{font-size:30px;height:40px;}
+#world{font-weight:bold;margin:10px;}
+
+#xpBarContainer{
+width:300px;
+height:20px;
+background:#ddd;
+margin:10px auto;
+border-radius:10px;
+overflow:hidden;
+}
+#xpBar{
+height:100%;
+width:0%;
+background:limegreen;
+transition:width 0.4s;
+}
+
+.badge{
+display:inline-block;
+padding:5px 10px;
+background:gold;
+margin:3px;
+border-radius:10px;
+font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🌟 Math Adventure Pro</h1>
+
+Player
+<select id="player">
+<option value="clariza">Clariza (Year 2)</option>
+<option value="jace">Jace (Year 4)</option>
+</select>
+
+Topic
+<select id="topic">
+<option value="addition">Addition</option>
+<option value="subtraction">Subtraction</option>
+<option value="multiplication">Multiplication</option>
+<option value="division">Division</option>
+</select>
+
+Mode
+<select id="mode">
+<option value="timed">Timed (60s)</option>
+<option value="practice">Practice (No timer)</option>
+</select>
+
+<br>
+<button onclick="startGame()">Start Adventure</button>
+
+<div id="world"></div>
+<div id="character"></div>
+
+<div id="xpBarContainer"><div id="xpBar"></div></div>
+<div id="levelDisplay"></div>
+
+<div id="question"></div>
+<div id="reward"></div>
+
+<input id="answer">
+<br>
+<button onclick="submitAnswer()">Submit</button>
+
+<div id="score"></div>
+<div id="timer"></div>
+<div id="streak"></div>
+<div id="badges"></div>
+
+<script>
+window.onload = function(){
+
+let score=0;
+let xp=0;
+let levelNumber=1;
+let streak=0;
+let correctAnswer=0;
+let player="";
+let levelType="";
+let topic="";
+let mode="";
+let timeLeft=60;
+let timerInterval=null;
+let difficultyBoost=0;
+
+window.startGame=function(){
+
+player=document.getElementById("player").value;
+topic=document.getElementById("topic").value;
+mode=document.getElementById("mode").value;
+
+levelType=player==="clariza"?"young":"older";
+
+score=0;
+xp=0;
+levelNumber=1;
+streak=0;
+difficultyBoost=0;
+timeLeft=60;
+
+clearInterval(timerInterval);
+
+updateTheme();
+updateWorld();
+updateDisplays();
+newQuestion();
+
+if(mode==="timed"){
+timerInterval=setInterval(updateTimer,1000);
+}else{
+document.getElementById("timer").innerText="Practice Mode";
+}
+
+};
+
+function updateTheme(){
+if(player==="clariza"){
+document.body.style.background="#ffe6f2";
+document.getElementById("character").innerText="🦄";
+}else{
+document.body.style.background="#e6ffe6";
+document.getElementById("character").innerText="🦖";
+}
+}
+
+function updateWorld(){
+let worlds=["🌳 Forest","🏔 Mountain","🏝 Island","🚀 Space"];
+let index=Math.min(Math.floor(score/5),3);
+document.getElementById("world").innerText=worlds[index];
+}
+
+function updateDisplays(){
+document.getElementById("score").innerText="Score: "+score;
+document.getElementById("streak").innerText="Streak: "+streak+" 🔥";
+document.getElementById("levelDisplay").innerText="Level: "+levelNumber;
+document.getElementById("xpBar").style.width=(xp%10)*10+"%";
+}
+
+function updateTimer(){
+timeLeft--;
+document.getElementById("timer").innerText="Time: "+timeLeft;
+if(timeLeft<=0){
+clearInterval(timerInterval);
+alert("Time's up! Final Score: "+score);
+}
+}
+
+function newQuestion(){
+generateQuestion();
+}
+
+function generateQuestion(){
+
+let maxBase=levelType==="young"?20:100;
+let max=maxBase + difficultyBoost;
+
+let a=Math.floor(Math.random()*max);
+let b=Math.floor(Math.random()*max);
+
+if(topic==="addition"){
+correctAnswer=a+b;
+document.getElementById("question").innerText=a+" + "+b;
+}
+else if(topic==="subtraction"){
+if(b>a){let t=a;a=b;b=t;}
+correctAnswer=a-b;
+document.getElementById("question").innerText=a+" - "+b;
+}
+else if(topic==="multiplication"){
+a=Math.floor(Math.random()*(levelType==="young"?6:12))+1;
+b=Math.floor(Math.random()*(levelType==="young"?6:12))+1;
+correctAnswer=a*b;
+document.getElementById("question").innerText=a+" × "+b;
+}
+else if(topic==="division"){
+a=Math.floor(Math.random()*(levelType==="young"?6:12))+1;
+b=Math.floor(Math.random()*(levelType==="young"?6:12))+1;
+correctAnswer=a;
+document.getElementById("question").innerText=(a*b)+" ÷ "+b;
+}
+
+document.getElementById("answer").value="";
+document.getElementById("reward").innerText="";
+}
+
+window.submitAnswer=function(){
+
+let user=document.getElementById("answer").value.trim();
+if(user==="") return;
+
+if(parseFloat(user)===correctAnswer){
+score++;
+streak++;
+xp++;
+difficultyBoost++;
+
+if(streak%3===0){
+score+=2;
+document.getElementById("reward").innerText="🔥 Combo Bonus!";
+}else{
+document.getElementById("reward").innerText="⭐";
+}
+
+if(xp%10===0){
+levelNumber++;
+alert("LEVEL UP! 🎉 Now Level "+levelNumber);
+}
+
+checkBadges();
+
+}else{
+streak=0;
+difficultyBoost=Math.max(0,difficultyBoost-2);
+document.getElementById("reward").innerText="❌";
+}
+
+updateWorld();
+updateDisplays();
+setTimeout(newQuestion,600);
+};
+
+function checkBadges(){
+let badges=document.getElementById("badges");
+if(score===10) badges.innerHTML+="<div class='badge'>🏆 10 Correct!</div>";
+if(streak===5) badges.innerHTML+="<div class='badge'>🔥 5 Streak!</div>";
+if(levelNumber===5) badges.innerHTML+="<div class='badge'>⭐ Level 5!</div>";
+}
+
+document.getElementById("answer").addEventListener("keydown",function(e){
+if(e.key==="Enter") submitAnswer();
+});
+
+};
+</script>
+
+</body>
+</html>
