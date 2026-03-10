@@ -6,16 +6,20 @@
 <title>Math Adventure NZ</title>
 <!-- Confetti Library -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<!-- 3 Fun Fonts that will change daily -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
 body {
-    font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+    /* Font will be injected via Javascript based on the day */
     text-align: center;
     margin: 0;
     padding: 10px;
     background: #e9f6ff;
-    transition: background 0.5s ease;
+    transition: background 0.5s ease, font-family 0.5s ease;
 }
 
 #gameContainer {
@@ -30,7 +34,7 @@ body {
 h1 { margin-top: 5px; font-size: 28px; }
 
 select, button, input {
-    font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+    font-family: inherit; /* Inherits the daily font */
     font-size: 16px;
     padding: 8px;
     margin: 4px;
@@ -39,7 +43,7 @@ select, button, input {
 }
 
 #question { font-size: 32px; font-weight: bold; color: #333; margin: 0; }
-#answer { font-size: 28px; width: 160px; text-align: center; border: 3px solid #ccc; outline: none; }
+#answer { font-size: 28px; width: 160px; text-align: center; border: 3px solid #ccc; outline: none; font-family: inherit; }
 #reward { font-size: 24px; height: 30px; font-weight: bold; margin-bottom: 5px;}
 #correction { color: #c00; height: 20px; font-weight: bold; font-size: 18px; }
 
@@ -55,6 +59,7 @@ select, button, input {
     box-shadow: 0px 4px 0px #bbb;
     transition: transform 0.1s, box-shadow 0.1s;
     user-select: none;
+    font-family: inherit;
 }
 .key:active { transform: translateY(4px); box-shadow: 0px 0px 0px #bbb; }
 
@@ -85,10 +90,7 @@ select, button, input {
     border: 5px solid #ffcc00;
     animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-@keyframes popIn {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
+@keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 #modalTitle { font-size: 28px; margin-top: 0; color: #333; }
 #modalStars { font-size: 50px; margin: 10px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
 #modalScoreText { font-size: 22px; font-weight: bold; color: #555; }
@@ -200,18 +202,43 @@ let isGameOverState = true;
 const allTopics = ["addition", "subtraction", "multiplication", "division", "fractions", "money", "time", "patterns", "geometry", "measurement", "rounding", "logic"];
 
 let highScores = JSON.parse(localStorage.getItem("mathGameHighScores")) || { clariza: 0, jace: 0 };
-let clarizaRewards = ["Magic! 🦄", "Wackadoo! 🐶", "Sparkly! ✨", "Hooray! 🌈", "Super! 🎈"];
-let jaceRewards = ["Roar-some! 🦖", "Turbo Speed! 🏎️", "Vroom! 🏁", "Dino-mite! 🦕", "On Fire! 🔥"];
+
+// --- DAILY ROTATION LOGIC ---
+const dayOfWeek = new Date().getDay(); // Returns 0 (Sun) to 6 (Sat)
+const fonts = ["'Fredoka', sans-serif", "'Bubblegum Sans', cursive", "'Comic Neue', cursive"];
+const dailyFont = fonts[dayOfWeek % 3]; // Cycles 3 fonts throughout the week
+
+// 7 Themes for Clariza
+const clarizaDaily = [
+    { title: "🦄 Clariza's Math 🐶", praises: ["Magic! 🦄", "Wackadoo! 🐶", "Sparkly! ✨", "Hooray! 🌈"] }, // Sun
+    { title: "🧜‍♀️ Clariza's Math 🐚", praises: ["Splash! 🌊", "Mer-mazing! 🧜‍♀️", "Beautiful! 🐚", "Wow! 🐠"] }, // Mon
+    { title: "🧚‍♀️ Clariza's Math 🌸", praises: ["Fairy Dust! ✨", "So Pretty! 🌸", "Magical! 🧚‍♀️", "Flutter! 🍃"] }, // Tue
+    { title: "👸 Clariza's Math 🏰", praises: ["Royal! 👑", "Princess! 👸", "Majestic! 🏰", "Sparkle! 💎"] }, // Wed
+    { title: "🌈 Clariza's Math ⭐", praises: ["Glowing! 🌟", "Radiant! 🌈", "Super Star! ⭐", "Bright! ☀️"] }, // Thu
+    { title: "🦋 Clariza's Math 🐞", praises: ["Fluttery! 🦋", "Cute! 🐞", "Sweet! 🌷", "Hooray! 🐝"] }, // Fri
+    { title: "🐱 Clariza's Math 🐾", praises: ["Purr-fect! 🐱", "Puppy Love! 🐶", "Meow! 🐾", "So Cute! 🐰"] }  // Sat
+];
+
+// 7 Themes for Jace
+const jaceDaily = [
+    { title: "🦖 Jace's Math 🏎️", praises: ["Roar-some! 🦖", "Turbo Speed! 🏎️", "Vroom! 🏁", "Dino-mite! 🦕"] }, // Sun
+    { title: "🚀 Jace's Math 👽", praises: ["Blast Off! 🚀", "Out of this World! 🛸", "Alien Tech! 👽", "Cosmic! ☄️"] }, // Mon
+    { title: "🤖 Jace's Math ⚙️", praises: ["System Go! 🔋", "Robot Power! 🤖", "Glitch Free! 💻", "Mechanical! ⚙️"] }, // Tue
+    { title: "🦸‍♂️ Jace's Math ⚡", praises: ["Heroic! 💥", "Super Strength! 🦸‍♂️", "ZAP! ⚡", "POW! 🥊"] }, // Wed
+    { title: "🥷 Jace's Math 🐉", praises: ["Stealthy! 🥷", "Dragon Fire! 🐉", "Ninja Moves! 🗡️", "Swift! 🌪️"] }, // Thu
+    { title: "🧟 Jace's Math 👻", praises: ["Spooky! 👻", "Monster Mash! 🧟", "Slime Time! 🦠", "Boo! 🎃"] }, // Fri
+    { title: "🏴‍☠️ Jace's Math 🪙", praises: ["Arrrgh! 🏴‍☠️", "Treasure! 💎", "Ahoy! ⚓", "Gold! 🪙"] } // Sat
+];
+
 let currentRewards = [];
 
 // --- THEMED AUDIO EFFECTS ---
 const sfx = {
-    clarizaWin: new Audio("https://assets.mixkit.co/active_storage/sfx/1936/1936-preview.mp3"), // Sparkly Magic
-    clarizaLose: new Audio("https://assets.mixkit.co/active_storage/sfx/2840/2840-preview.mp3"), // Soft boop
-    jaceWin: new Audio("https://assets.mixkit.co/active_storage/sfx/1466/1466-preview.mp3"),    // Car Zoom
-    jaceLose: new Audio("https://assets.mixkit.co/active_storage/sfx/2951/2951-preview.mp3")     // Thud fail
+    clarizaWin: new Audio("https://assets.mixkit.co/active_storage/sfx/1936/1936-preview.mp3"),
+    clarizaLose: new Audio("https://assets.mixkit.co/active_storage/sfx/2840/2840-preview.mp3"),
+    jaceWin: new Audio("https://assets.mixkit.co/active_storage/sfx/1466/1466-preview.mp3"),
+    jaceLose: new Audio("https://assets.mixkit.co/active_storage/sfx/2951/2951-preview.mp3")
 };
-// Lower volume so it's pleasant
 Object.values(sfx).forEach(a => a.volume = 0.4);
 
 function playSound(type) {
@@ -224,7 +251,7 @@ function playSound(type) {
             if (type === "win") { sfx.jaceWin.currentTime = 0; sfx.jaceWin.play(); }
             else { sfx.jaceLose.currentTime = 0; sfx.jaceLose.play(); }
         }
-    } catch(e) {} // Catch in case browser blocks auto-play before interaction
+    } catch(e) {} 
 }
 
 function rand(max) { return Math.floor(Math.random()*max); }
@@ -236,10 +263,13 @@ function applyTheme() {
     let xpBar = document.getElementById("xpBar");
     let playAgainBtn = document.getElementById("playAgainBtn");
 
+    // Apply the Daily Font
+    document.body.style.fontFamily = dailyFont;
+
     if (p === "clariza") {
         document.body.style.background = "linear-gradient(135deg, #A1C4FD 0%, #ffafbd 100%)";
-        document.getElementById("gameTitle").innerText = "🦄 Clariza's Math 🐶";
-        currentRewards = clarizaRewards;
+        document.getElementById("gameTitle").innerText = clarizaDaily[dayOfWeek].title;
+        currentRewards = clarizaDaily[dayOfWeek].praises;
         xpBar.style.background = "linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)";
         startBtn.className = "theme-clariza-btn";
         submitBtn.className = "theme-clariza-btn";
@@ -247,8 +277,8 @@ function applyTheme() {
         document.getElementById("reward").style.color = "#d1478e";
     } else {
         document.body.style.background = "linear-gradient(135deg, #f12711 0%, #f5af19 100%)";
-        document.getElementById("gameTitle").innerText = "🦖 Jace's Math 🏎️";
-        currentRewards = jaceRewards;
+        document.getElementById("gameTitle").innerText = jaceDaily[dayOfWeek].title;
+        currentRewards = jaceDaily[dayOfWeek].praises;
         xpBar.style.background = "repeating-linear-gradient(45deg, #000, #000 10px, #fff 10px, #fff 20px)";
         startBtn.className = "theme-jace-btn";
         submitBtn.className = "theme-jace-btn";
@@ -324,7 +354,6 @@ function triggerGameOver() {
         else if(score >= 7) { stars = "⭐⭐"; title = "Awesome Job!"; }
         else { stars = "⭐"; title = "Good Practice!"; }
     } else {
-        // Practice Mode manual exit
         title = "Practice Finished!";
         scoreText = "Questions Answered: " + score;
         stars = "⭐⭐⭐";
@@ -332,13 +361,11 @@ function triggerGameOver() {
 
     updateHighScoresDisplay();
 
-    // Show Modal
     document.getElementById("modalTitle").innerText = title;
     document.getElementById("modalStars").innerText = stars;
     document.getElementById("modalScoreText").innerText = scoreText;
     document.getElementById("gameOverModal").style.display = "flex";
 
-    // Trigger Confetti for High Scores or Perfect 10s!
     if (isHighScore) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 2000 });
         setTimeout(() => confetti({ particleCount: 100, spread: 100, origin: { y: 0.5 }, zIndex: 2000 }), 500);
@@ -388,38 +415,30 @@ function newQuestion() {
 
     if(activeTopic==="addition"){
         if(levelType==="young"){
-            let a=rand(11); let b=rand(11); correctAnswer=a+b; 
-            showQ(a+" + "+b, a+" plus "+b);
+            let a=rand(11); let b=rand(11); correctAnswer=a+b; showQ(a+" + "+b, a+" plus "+b);
         }else{
-            let a=rand(90)+10; let b=rand(90)+10; correctAnswer=a+b; 
-            showQ(a+" + "+b, a+" plus "+b);
+            let a=rand(90)+10; let b=rand(90)+10; correctAnswer=a+b; showQ(a+" + "+b, a+" plus "+b);
         }
     }
     else if(activeTopic==="subtraction"){
         if(levelType==="young"){
-            let a=rand(21); let b=rand(a+1); correctAnswer=a-b; 
-            showQ(a+" - "+b, a+" minus "+b);
+            let a=rand(21); let b=rand(a+1); correctAnswer=a-b; showQ(a+" - "+b, a+" minus "+b);
         }else{
-            let a=rand(90)+10; let b=rand(a+1); correctAnswer=a-b; 
-            showQ(a+" - "+b, a+" minus "+b);
+            let a=rand(90)+10; let b=rand(a+1); correctAnswer=a-b; showQ(a+" - "+b, a+" minus "+b);
         }
     }
     else if(activeTopic==="multiplication"){
         if(levelType==="young"){
-            let tables=[2,5,10]; let a=tables[rand(3)]; let b=rand(11); correctAnswer=a*b; 
-            showQ(a+" × "+b, a+" times "+b);
+            let tables=[2,5,10]; let a=tables[rand(3)]; let b=rand(11); correctAnswer=a*b; showQ(a+" × "+b, a+" times "+b);
         }else{
-            let tables=[2,3,4,5,10]; let a=tables[rand(tables.length)]; let b=rand(11); correctAnswer=a*b; 
-            showQ(a+" × "+b, a+" times "+b);
+            let tables=[2,3,4,5,10]; let a=tables[rand(tables.length)]; let b=rand(11); correctAnswer=a*b; showQ(a+" × "+b, a+" times "+b);
         }
     }
     else if(activeTopic==="division"){
         if(levelType==="young"){
-            let tables=[2,5,10]; let b=tables[rand(3)]; let a=rand(6); correctAnswer=a; 
-            showQ((a*b)+" ÷ "+b, (a*b)+" divided by "+b);
+            let tables=[2,5,10]; let b=tables[rand(3)]; let a=rand(6); correctAnswer=a; showQ((a*b)+" ÷ "+b, (a*b)+" divided by "+b);
         }else{
-            let tables=[2,3,4,5,10]; let b=tables[rand(tables.length)]; let a=rand(11); correctAnswer=a; 
-            showQ((a*b)+" ÷ "+b, (a*b)+" divided by "+b);
+            let tables=[2,3,4,5,10]; let b=tables[rand(tables.length)]; let a=rand(11); correctAnswer=a; showQ((a*b)+" ÷ "+b, (a*b)+" divided by "+b);
         }
     }
     else if(activeTopic==="fractions"){
@@ -431,11 +450,9 @@ function newQuestion() {
     }
     else if(activeTopic==="money"){
         if(levelType==="young"){
-            let a=rand(10)+1; let b=rand(10)+1; correctAnswer=a+b; 
-            showQ("$"+a+" + $"+b, a+" dollars plus "+b+" dollars");
+            let a=rand(10)+1; let b=rand(10)+1; correctAnswer=a+b; showQ("$"+a+" + $"+b, a+" dollars plus "+b+" dollars");
         }else{
-            let a=rand(20)+1; let b=rand(20)+1; correctAnswer=a+b; 
-            showQ("$"+a+".00 + $"+b+".00", a+" dollars plus "+b+" dollars");
+            let a=rand(20)+1; let b=rand(20)+1; correctAnswer=a+b; showQ("$"+a+".00 + $"+b+".00", a+" dollars plus "+b+" dollars");
         }
     }
     else if(activeTopic==="time"){
@@ -444,32 +461,25 @@ function newQuestion() {
             if(rand(2)===0){ correctAnswer=h+":00"; showQ(h+" o'clock"); }
             else{ correctAnswer=h+":30"; showQ("Half past "+h); }
         }else{
-            let h=rand(12)+1; let m=rand(12)*5; 
-            correctAnswer=h+":"+String(m).padStart(2,"0");
-            showQ(h+" hr "+m+" min = ?", "Write the time for "+h+" hours and "+m+" minutes");
+            let h=rand(12)+1; let m=rand(12)*5; correctAnswer=h+":"+String(m).padStart(2,"0"); showQ(h+" hr "+m+" min = ?", "Write the time for "+h+" hours and "+m+" minutes");
         }
     }
     else if(activeTopic==="patterns"){
         if(levelType==="young"){
-            let start=rand(10)+1; let step=[2,5][rand(2)]; correctAnswer=start+3*step;
-            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?", "What comes next? "+start+", "+(start+step)+", "+(start+2*step));
+            let start=rand(10)+1; let step=[2,5][rand(2)]; correctAnswer=start+3*step; showQ(start+", "+(start+step)+", "+(start+2*step)+", ?", "What comes next? "+start+", "+(start+step)+", "+(start+2*step));
         }else{
-            let start=rand(20)+1; let step=rand(10)+2; correctAnswer=start+3*step;
-            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?", "What comes next? "+start+", "+(start+step)+", "+(start+2*step));
+            let start=rand(20)+1; let step=rand(10)+2; correctAnswer=start+3*step; showQ(start+", "+(start+step)+", "+(start+2*step)+", ?", "What comes next? "+start+", "+(start+step)+", "+(start+2*step));
         }
     }
     else if(activeTopic==="geometry"){
         let shapes=[ {name:"triangle",sides:3}, {name:"square",sides:4}, {name:"pentagon",sides:5}, {name:"hexagon",sides:6} ];
-        let s=shapes[rand(shapes.length)]; correctAnswer=s.sides; 
-        showQ("Sides on a "+s.name+"?", "How many sides does a "+s.name+" have?");
+        let s=shapes[rand(shapes.length)]; correctAnswer=s.sides; showQ("Sides on a "+s.name+"?", "How many sides does a "+s.name+" have?");
     }
     else if(activeTopic==="measurement"){
         if(levelType==="young"){
-            let cm=rand(10)+1; correctAnswer=cm*10; 
-            showQ("mm in "+cm+" cm?", "How many millimeters are in "+cm+" centimeters?");
+            let cm=rand(10)+1; correctAnswer=cm*10; showQ("mm in "+cm+" cm?", "How many millimeters are in "+cm+" centimeters?");
         }else{
-            let m=rand(5)+1; let cm=m*100; correctAnswer=m; 
-            showQ(cm+" cm = ? m", "How many meters is "+cm+" centimeters?");
+            let m=rand(5)+1; let cm=m*100; correctAnswer=m; showQ(cm+" cm = ? m", "How many meters is "+cm+" centimeters?");
         }
     }
     else if(activeTopic==="rounding"){
@@ -482,8 +492,7 @@ function newQuestion() {
         }
     }
     else if(activeTopic==="logic"){
-        let a=rand(10)+1; let b=a+3; let c=b+3; correctAnswer=c+3; 
-        showQ(a+", "+b+", "+c+", ?", "What comes next? "+a+", "+b+", "+c);
+        let a=rand(10)+1; let b=a+3; let c=b+3; correctAnswer=c+3; showQ(a+", "+b+", "+c+", ?", "What comes next? "+a+", "+b+", "+c);
     }
 }
 
@@ -534,6 +543,7 @@ document.addEventListener("keydown", function(e) {
     if(e.key===":") { addNumber(":"); }
 });
 
+// Run once on load to set today's theme
 applyTheme();
 
 </script>
