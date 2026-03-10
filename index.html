@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Adventure Pro</title>
+<title>Math Adventure</title>
 
 <style>
 body{
@@ -29,7 +29,7 @@ margin:5px;
 
 #answer{
 font-size:28px;
-width:150px;
+width:160px;
 text-align:center;
 }
 
@@ -48,27 +48,13 @@ background:#ffffff;
 border-radius:10px;
 border:2px solid #ccc;
 cursor:pointer;
+user-select:none;
 }
 
 .key:active{
 background:#ddd;
 }
 
-#xpBarContainer{
-width:250px;
-height:15px;
-background:#ddd;
-margin:10px auto;
-border-radius:10px;
-overflow:hidden;
-}
-
-#xpBar{
-height:100%;
-width:0%;
-background:limegreen;
-transition:width 0.3s;
-}
 </style>
 </head>
 
@@ -78,8 +64,8 @@ transition:width 0.3s;
 
 Player
 <select id="player">
-<option value="clariza">Clariza (Year 2)</option>
-<option value="jace">Jace (Year 4)</option>
+<option value="clariza">Clariza </option>
+<option value="jace">Jace (</option>
 </select>
 
 Topic
@@ -102,13 +88,10 @@ Mode
 <div id="world"></div>
 <div id="character"></div>
 
-<div id="xpBarContainer"><div id="xpBar"></div></div>
-<div id="levelDisplay"></div>
-
 <div id="question"></div>
 <div id="reward"></div>
 
-<input id="answer" readonly>
+<input id="answer">
 
 <div id="keypad">
 <div class="key" onclick="addNumber('1')">1</div>
@@ -137,8 +120,6 @@ Mode
 
 <script>
 let score=0;
-let xp=0;
-let levelNumber=1;
 let streak=0;
 let correctAnswer=0;
 let player="";
@@ -155,7 +136,9 @@ topic=document.getElementById("topic").value;
 mode=document.getElementById("mode").value;
 levelType=player==="clariza"?"young":"older";
 
-score=0; xp=0; levelNumber=1; streak=0; timeLeft=60;
+score=0;
+streak=0;
+timeLeft=60;
 clearInterval(timerInterval);
 
 updateTheme();
@@ -182,8 +165,6 @@ document.getElementById("character").innerText="🦖";
 function updateDisplays(){
 document.getElementById("score").innerText="Score: "+score;
 document.getElementById("streak").innerText="Streak: "+streak+" 🔥";
-document.getElementById("levelDisplay").innerText="Level: "+levelNumber;
-document.getElementById("xpBar").style.width=(xp%10)*10+"%";
 }
 
 function updateTimer(){
@@ -196,6 +177,7 @@ alert("Time's up! Final Score: "+score);
 }
 
 function newQuestion(){
+
 let max=levelType==="young"?20:100;
 let a=Math.floor(Math.random()*max);
 let b=Math.floor(Math.random()*max);
@@ -239,13 +221,12 @@ document.getElementById("answer").value=val.slice(0,-1);
 }
 
 function submitAnswer(){
-let user=document.getElementById("answer").value;
+let user=document.getElementById("answer").value.trim();
 if(user==="") return;
 
-if(parseInt(user)===correctAnswer){
+if(parseFloat(user)===correctAnswer){
 score++;
 streak++;
-xp++;
 document.getElementById("reward").innerText="⭐";
 }else{
 streak=0;
@@ -255,6 +236,28 @@ document.getElementById("reward").innerText="❌";
 updateDisplays();
 setTimeout(newQuestion,600);
 }
+
+/* ✅ Keyboard support */
+document.addEventListener("keydown",function(e){
+
+if(e.key>="0" && e.key<="9"){
+addNumber(e.key);
+}
+
+if(e.key==="Backspace"){
+backspace();
+}
+
+if(e.key==="Enter"){
+submitAnswer();
+}
+
+if(e.key==="Escape"){
+clearAnswer();
+}
+
+});
+
 </script>
 
 </body>
