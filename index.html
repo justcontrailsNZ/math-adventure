@@ -59,7 +59,7 @@ Mode
 <div id="reward"></div>
 <div id="correction"></div>
 
-<input id="answer">
+<input id="answer" autocomplete="off">
 
 <div id="keypad">
 <div class="key" onclick="addNumber('1')">1</div>
@@ -71,17 +71,20 @@ Mode
 <div class="key" onclick="addNumber('7')">7</div>
 <div class="key" onclick="addNumber('8')">8</div>
 <div class="key" onclick="addNumber('9')">9</div>
-<div class="key" onclick="clearAnswer()">C</div>
+<div class="key" onclick="addNumber('.')">.</div>
 <div class="key" onclick="addNumber('0')">0</div>
-<div class="key" onclick="backspace()">⌫</div>
+<div class="key" onclick="addNumber(':')">:</div>
+<div class="key" style="background:#ffcccc;" onclick="clearAnswer()">C</div>
+<div style="visibility:hidden;"></div> <!-- Empty space for alignment -->
+<div class="key" style="background:#ffdd99;" onclick="backspace()">⌫</div>
 </div>
 
 <br>
-<button onclick="submitAnswer()">Submit ✅</button>
+<button style="background:#4CAF50;color:white;font-weight:bold;padding:10px 20px;" onclick="submitAnswer()">Submit ✅</button>
 
-<div id="score"></div>
-<div id="timer"></div>
-<div id="streak"></div>
+<div id="score" style="margin-top:15px;font-weight:bold;"></div>
+<div id="timer" style="font-weight:bold;"></div>
+<div id="streak" style="font-weight:bold;color:#ff8c00;"></div>
 
 <script>
 
@@ -110,7 +113,7 @@ document.getElementById("timer").innerText="Practice Mode";
 function updateTimer(){
 timeLeft--;
 document.getElementById("timer").innerText="Time: "+timeLeft;
-if(timeLeft<=0){clearInterval(timerInterval);alert("Final Score: "+score);}
+if(timeLeft<=0){clearInterval(timerInterval);alert("Time's up! Final Score: "+score);}
 }
 
 function updateDisplays(){
@@ -129,11 +132,11 @@ document.getElementById("answer").value="";
 /* ADDITION */
 if(topic==="addition"){
 if(levelType==="young"){
-let a=rand(21); let b=rand(21);
+let a=rand(11); let b=rand(11); // NZC Level 1: Sums up to 20
 correctAnswer=a+b;
 showQ(a+" + "+b);
 }else{
-let a=rand(1000); let b=rand(1000);
+let a=rand(90)+10; let b=rand(90)+10; // NZC Level 2: 2-digit mental addition
 correctAnswer=a+b;
 showQ(a+" + "+b);
 }
@@ -142,12 +145,11 @@ showQ(a+" + "+b);
 /* SUBTRACTION */
 else if(topic==="subtraction"){
 if(levelType==="young"){
-let a=rand(21); let b=rand(a+1);
+let a=rand(21); let b=rand(a+1); // NZC Level 1: Under 20, no negative answers
 correctAnswer=a-b;
 showQ(a+" - "+b);
 }else{
-let a=rand(1000); let b=rand(1000);
-if(b>a){let t=a;a=b;b=t;}
+let a=rand(90)+10; let b=rand(a+1); // NZC Level 2: 2-digit mental subtraction
 correctAnswer=a-b;
 showQ(a+" - "+b);
 }
@@ -156,14 +158,15 @@ showQ(a+" - "+b);
 /* MULTIPLICATION */
 else if(topic==="multiplication"){
 if(levelType==="young"){
-let tables=[2,5,10];
+let tables=[2,5,10]; // NZC Level 1: Skip counting by 2, 5, 10
 let a=tables[rand(3)];
 let b=rand(11);
 correctAnswer=a*b;
 showQ(a+" × "+b);
 }else{
-let a=rand(11)+2;
-let b=rand(13);
+let tables=[2,3,4,5,10]; // NZC Level 2: Times tables 2, 3, 4, 5, 10
+let a=tables[rand(tables.length)];
+let b=rand(11);
 correctAnswer=a*b;
 showQ(a+" × "+b);
 }
@@ -174,12 +177,13 @@ else if(topic==="division"){
 if(levelType==="young"){
 let tables=[2,5,10];
 let b=tables[rand(3)];
-let a=rand(6);
+let a=rand(6); // Keep dividends very small for Year 2
 correctAnswer=a;
 showQ((a*b)+" ÷ "+b);
 }else{
-let b=rand(11)+2;
-let a=rand(13);
+let tables=[2,3,4,5,10];
+let b=tables[rand(tables.length)];
+let a=rand(11);
 correctAnswer=a;
 showQ((a*b)+" ÷ "+b);
 }
@@ -188,11 +192,11 @@ showQ((a*b)+" ÷ "+b);
 /* FRACTIONS */
 else if(topic==="fractions"){
 if(levelType==="young"){
-let n=(rand(10)+1)*2;
+let n=(rand(10)+1)*2; // NZC Level 1: Halves
 correctAnswer=n/2;
 showQ("Half of "+n);
 }else{
-let n=(rand(10)+1)*4;
+let n=(rand(10)+1)*4; // NZC Level 2: Quarters
 correctAnswer=n/4;
 showQ("Quarter of "+n);
 }
@@ -205,10 +209,9 @@ let a=rand(10)+1; let b=rand(10)+1;
 correctAnswer=a+b;
 showQ("$"+a+" + $"+b);
 }else{
-let a=(Math.random()*20).toFixed(2);
-let b=(Math.random()*20).toFixed(2);
-correctAnswer=(parseFloat(a)+parseFloat(b)).toFixed(2);
-showQ("$"+a+" + $"+b);
+let a=rand(20)+1; let b=rand(20)+1; // Mental whole-dollar addition
+correctAnswer=a+b;
+showQ("$"+a+".00 + $"+b+".00");
 }
 }
 
@@ -225,9 +228,9 @@ showQ("Half past "+h);
 }
 }else{
 let h=rand(12)+1;
-let m=rand(12)*5;
+let m=rand(12)*5; // 5-minute intervals
 correctAnswer=h+":"+String(m).padStart(2,"0");
-showQ("Write time: "+h+" hour "+m+" minutes");
+showQ("Write time: "+h+" hour "+m+" mins");
 }
 }
 
@@ -262,12 +265,13 @@ showQ("How many sides does a "+s.name+" have?");
 /* MEASUREMENT */
 else if(topic==="measurement"){
 if(levelType==="young"){
-let cm=rand(100);
-correctAnswer=cm;
-showQ("How many cm in "+cm+" cm?");
+let cm=rand(10)+1; // NZC Level 1: Standard uniform groupings
+correctAnswer=cm*10;
+showQ("How many mm in "+cm+" cm?");
 }else{
-let cm=rand(200);
-correctAnswer=(cm/100).toFixed(2);
+let m=rand(5)+1; // NZC Level 2: Basic conversions (no decimals needed)
+let cm=m*100;
+correctAnswer=m;
 showQ(cm+" cm = ? m");
 }
 }
@@ -275,7 +279,7 @@ showQ(cm+" cm = ? m");
 /* ROUNDING */
 else if(topic==="rounding"){
 if(levelType==="young"){
-let n=rand(100);
+let n=rand(50); // Keep numbers small
 correctAnswer=Math.round(n/10)*10;
 showQ("Round "+n+" to nearest 10");
 }else{
@@ -311,6 +315,7 @@ function submitAnswer(){
 let user=document.getElementById("answer").value.trim();
 if(user==="") return;
 
+// Use loose equality (==) so numbers and strings compare smoothly 
 if(user==correctAnswer){
 score++;streak++;xp++;
 document.getElementById("reward").innerText="⭐ Correct!";
@@ -320,12 +325,13 @@ document.getElementById("reward").innerText="❌ Incorrect";
 document.getElementById("correction").innerText="Answer: "+correctAnswer;
 }
 
-if(xp%10===0){levelNumber++;}
+if(xp%10===0 && xp>0){levelNumber++;}
 
 updateDisplays();
 setTimeout(newQuestion,1000);
 }
 
+// Add keyboard support
 document.addEventListener("keydown",function(e){
 if(e.key>="0"&&e.key<="9"){addNumber(e.key);}
 if(e.key==="Backspace"){backspace();}
@@ -334,6 +340,9 @@ if(e.key==="Escape"){clearAnswer();}
 if(e.key==="."){addNumber(".");}
 if(e.key===":"){addNumber(":");}
 });
+
+// Start initial practice mode so screen isn't empty
+document.getElementById("timer").innerText="Choose mode & press Start";
 
 </script>
 
