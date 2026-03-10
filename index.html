@@ -5,344 +5,384 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Math Adventure NZ</title>
 <style>
-body{font-family:Arial;text-align:center;margin:0;padding:10px;background:#e9f6ff;}
-select,button,input{font-size:16px;padding:8px;margin:4px;border-radius:8px;}
-#question{font-size:24px;margin:10px;font-weight:bold;}
-#answer{font-size:26px;width:160px;text-align:center;}
-#reward{font-size:20px;height:25px;}
-#correction{color:#c00;height:20px;}
-#keypad{display:grid;grid-template-columns:repeat(3,75px);gap:8px;justify-content:center;margin:10px;}
-.key{font-size:22px;padding:12px;background:white;border-radius:10px;border:2px solid #bbb;cursor:pointer;}
-#xpBarContainer{width:250px;height:15px;background:#ddd;margin:6px auto;border-radius:10px;}
-#xpBar{height:100%;width:0%;background:limegreen;border-radius:10px;transition:width 0.3s;}
+/* Added a fun, kid-friendly font */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
+
+body {
+    font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 10px;
+    background: #e9f6ff;
+    transition: background 0.5s ease; /* Smooth background transition */
+}
+
+/* Game container to make it pop against the background */
+#gameContainer {
+    background: rgba(255, 255, 255, 0.92);
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px 10px;
+    border-radius: 20px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+}
+
+h1 { margin-top: 5px; font-size: 28px; }
+
+select, button, input {
+    font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+    font-size: 16px;
+    padding: 8px;
+    margin: 4px;
+    border-radius: 8px;
+    border: 2px solid #ccc;
+}
+
+#question { font-size: 32px; margin: 15px; font-weight: bold; color: #333; }
+#answer { font-size: 28px; width: 160px; text-align: center; border: 3px solid #ccc; }
+#reward { font-size: 24px; height: 30px; font-weight: bold; margin-bottom: 5px;}
+#correction { color: #c00; height: 20px; font-weight: bold; font-size: 18px; }
+
+#keypad { display: grid; grid-template-columns: repeat(4, 70px); gap: 8px; justify-content: center; margin: 15px auto; }
+.key {
+    font-size: 24px;
+    font-weight: bold;
+    padding: 12px;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #bbb;
+    cursor: pointer;
+    box-shadow: 0px 4px 0px #bbb;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+.key:active {
+    transform: translateY(4px);
+    box-shadow: 0px 0px 0px #bbb;
+}
+
+#xpBarContainer { width: 250px; height: 20px; background: #ddd; margin: 10px auto; border-radius: 10px; overflow: hidden; border: 2px solid #999;}
+#xpBar { height: 100%; width: 0%; background: limegreen; border-radius: 10px; transition: width 0.3s; }
+
+/* Themed UI Classes */
+.theme-jace-btn { background: #ff4500 !important; color: white !important; border-color: #cc3700 !important; }
+.theme-clariza-btn { background: #ff69b4 !important; color: white !important; border-color: #d1478e !important; }
+
 </style>
 </head>
 <body>
 
-<h1>🌟 Math Adventure NZ</h1>
+<div id="gameContainer">
+    <h1 id="gameTitle">🌟 Math Adventure</h1>
 
-Player
-<select id="player">
-<option value="clariza">Clariza (Year 2)</option>
-<option value="jace">Jace (Year 4)</option>
-</select>
+    <div>
+        <select id="player" onchange="applyTheme()">
+            <option value="clariza">Clariza (Year 2)</option>
+            <option value="jace">Jace (Year 4)</option>
+        </select>
 
-Topic
-<select id="topic">
-<option value="addition">Addition</option>
-<option value="subtraction">Subtraction</option>
-<option value="multiplication">Multiplication</option>
-<option value="division">Division</option>
-<option value="fractions">Fractions</option>
-<option value="money">Money (NZD)</option>
-<option value="time">Time</option>
-<option value="patterns">Patterns</option>
-<option value="geometry">Geometry</option>
-<option value="measurement">Measurement</option>
-<option value="rounding">Rounding</option>
-<option value="logic">Logic</option>
-</select>
+        <select id="topic">
+            <option value="addition">Addition</option>
+            <option value="subtraction">Subtraction</option>
+            <option value="multiplication">Multiplication</option>
+            <option value="division">Division</option>
+            <option value="fractions">Fractions</option>
+            <option value="money">Money (NZD)</option>
+            <option value="time">Time</option>
+            <option value="patterns">Patterns</option>
+            <option value="geometry">Geometry</option>
+            <option value="measurement">Measurement</option>
+            <option value="rounding">Rounding</option>
+            <option value="logic">Logic</option>
+        </select>
+    </div>
 
-Mode
-<select id="mode">
-<option value="timed">Timed (60s)</option>
-<option value="practice">Practice</option>
-</select>
+    <div>
+        <select id="mode">
+            <option value="timed">Timed (60s)</option>
+            <option value="practice">Practice</option>
+        </select>
+    </div>
 
-<br>
-<button onclick="startGame()">Start Adventure</button>
+    <button id="startBtn" onclick="startGame()" style="background:#4CAF50; color:white; font-size:18px; font-weight:bold; margin-top:10px; cursor:pointer;">Start Adventure!</button>
 
-<div id="levelDisplay"></div>
-<div id="xpBarContainer"><div id="xpBar"></div></div>
+    <div id="levelDisplay" style="margin-top:15px; font-weight:bold; font-size:18px;">Level 1</div>
+    <div id="xpBarContainer"><div id="xpBar"></div></div>
 
-<div id="question"></div>
-<div id="reward"></div>
-<div id="correction"></div>
+    <div id="question">?</div>
+    <div id="reward"></div>
+    <div id="correction"></div>
 
-<input id="answer" autocomplete="off">
+    <input id="answer" autocomplete="off" readonly placeholder="...">
 
-<div id="keypad">
-<div class="key" onclick="addNumber('1')">1</div>
-<div class="key" onclick="addNumber('2')">2</div>
-<div class="key" onclick="addNumber('3')">3</div>
-<div class="key" onclick="addNumber('4')">4</div>
-<div class="key" onclick="addNumber('5')">5</div>
-<div class="key" onclick="addNumber('6')">6</div>
-<div class="key" onclick="addNumber('7')">7</div>
-<div class="key" onclick="addNumber('8')">8</div>
-<div class="key" onclick="addNumber('9')">9</div>
-<div class="key" onclick="addNumber('.')">.</div>
-<div class="key" onclick="addNumber('0')">0</div>
-<div class="key" onclick="addNumber(':')">:</div>
-<div class="key" style="background:#ffcccc;" onclick="clearAnswer()">C</div>
-<div style="visibility:hidden;"></div> <!-- Empty space for alignment -->
-<div class="key" style="background:#ffdd99;" onclick="backspace()">⌫</div>
+    <div id="keypad">
+        <div class="key" onclick="addNumber('1')">1</div>
+        <div class="key" onclick="addNumber('2')">2</div>
+        <div class="key" onclick="addNumber('3')">3</div>
+        <div class="key" style="background:#ffcccc; color:#c00; border-color:#d99;" onclick="clearAnswer()">C</div>
+        
+        <div class="key" onclick="addNumber('4')">4</div>
+        <div class="key" onclick="addNumber('5')">5</div>
+        <div class="key" onclick="addNumber('6')">6</div>
+        <div class="key" style="background:#ffdd99; border-color:#d9b366;" onclick="backspace()">⌫</div>
+        
+        <div class="key" onclick="addNumber('7')">7</div>
+        <div class="key" onclick="addNumber('8')">8</div>
+        <div class="key" onclick="addNumber('9')">9</div>
+        <div class="key" onclick="addNumber('.')">.</div>
+
+        <div style="visibility:hidden;"></div> <!-- Spacer -->
+        <div class="key" onclick="addNumber('0')">0</div>
+        <div style="visibility:hidden;"></div> <!-- Spacer -->
+        <div class="key" onclick="addNumber(':')">:</div>
+    </div>
+
+    <button id="submitBtn" style="background:#4CAF50; color:white; font-weight:bold; font-size:20px; padding:10px 30px; cursor:pointer; border-radius:12px;" onclick="submitAnswer()">Submit ✅</button>
+
+    <div style="display:flex; justify-content:space-between; margin-top:20px; padding:0 20px;">
+        <div id="score" style="font-weight:bold; font-size:18px; color:#333;">Score: 0</div>
+        <div id="streak" style="font-weight:bold; font-size:18px; color:#ff8c00;">Streak: 0</div>
+    </div>
+    <div id="timer" style="font-weight:bold; font-size:18px; margin-top:10px; color:#555;">Choose mode & press Start</div>
+
 </div>
 
-<br>
-<button style="background:#4CAF50;color:white;font-weight:bold;padding:10px 20px;" onclick="submitAnswer()">Submit ✅</button>
-
-<div id="score" style="margin-top:15px;font-weight:bold;"></div>
-<div id="timer" style="font-weight:bold;"></div>
-<div id="streak" style="font-weight:bold;color:#ff8c00;"></div>
-
 <script>
+let score=0, xp=0, levelNumber=1, streak=0;
+let correctAnswer=0, player="", levelType="", topic="", mode="";
+let timeLeft=60, timerInterval=null;
 
-let score=0,xp=0,levelNumber=1,streak=0;
-let correctAnswer=0,player="",levelType="",topic="",mode="";
-let timeLeft=60,timerInterval=null;
+// Themed arrays for rewards
+let clarizaRewards = ["Magic! 🦄", "Wackadoo! 🐶", "Sparkly! ✨", "Hooray! 🌈", "Super! 🎈"];
+let jaceRewards = ["Roar-some! 🦖", "Turbo Speed! 🏎️", "Vroom! 🏁", "Dino-mite! 🦕", "On Fire! 🔥"];
+let currentRewards = [];
 
-function rand(max){return Math.floor(Math.random()*max);}
+function rand(max) { return Math.floor(Math.random()*max); }
 
-function startGame(){
-player=document.getElementById("player").value;
-topic=document.getElementById("topic").value;
-mode=document.getElementById("mode").value;
-levelType=player==="clariza"?"young":"older";
-score=0;xp=0;levelNumber=1;streak=0;timeLeft=60;
-clearInterval(timerInterval);
-updateDisplays();
-newQuestion();
-if(mode==="timed"){
-timerInterval=setInterval(updateTimer,1000);
-}else{
-document.getElementById("timer").innerText="Practice Mode";
-}
-}
+// Apply Theme based on who is playing
+function applyTheme() {
+    let p = document.getElementById("player").value;
+    let startBtn = document.getElementById("startBtn");
+    let submitBtn = document.getElementById("submitBtn");
+    let xpBar = document.getElementById("xpBar");
 
-function updateTimer(){
-timeLeft--;
-document.getElementById("timer").innerText="Time: "+timeLeft;
-if(timeLeft<=0){clearInterval(timerInterval);alert("Time's up! Final Score: "+score);}
-}
-
-function updateDisplays(){
-document.getElementById("score").innerText="Score: "+score;
-document.getElementById("streak").innerText="Streak: "+streak;
-document.getElementById("levelDisplay").innerText="Level "+levelNumber;
-document.getElementById("xpBar").style.width=(xp%10)*10+"%";
-}
-
-function newQuestion(){
-
-document.getElementById("reward").innerText="";
-document.getElementById("correction").innerText="";
-document.getElementById("answer").value="";
-
-/* ADDITION */
-if(topic==="addition"){
-if(levelType==="young"){
-let a=rand(11); let b=rand(11); // NZC Level 1: Sums up to 20
-correctAnswer=a+b;
-showQ(a+" + "+b);
-}else{
-let a=rand(90)+10; let b=rand(90)+10; // NZC Level 2: 2-digit mental addition
-correctAnswer=a+b;
-showQ(a+" + "+b);
-}
+    if (p === "clariza") {
+        document.body.style.background = "linear-gradient(135deg, #A1C4FD 0%, #ffafbd 100%)"; // Bluey blue to Unicorn pink
+        document.getElementById("gameTitle").innerText = "🦄 Clariza's Math 🐶";
+        currentRewards = clarizaRewards;
+        
+        // Rainbow XP Bar
+        xpBar.style.background = "linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)";
+        
+        startBtn.className = "theme-clariza-btn";
+        submitBtn.className = "theme-clariza-btn";
+        document.getElementById("reward").style.color = "#d1478e";
+    } else {
+        document.body.style.background = "linear-gradient(135deg, #f12711 0%, #f5af19 100%)"; // Hot wheels fire / Dino colors
+        document.getElementById("gameTitle").innerText = "🦖 Jace's Math 🏎️";
+        currentRewards = jaceRewards;
+        
+        // Racing Finish Line XP Bar
+        xpBar.style.background = "repeating-linear-gradient(45deg, #000, #000 10px, #fff 10px, #fff 20px)";
+        
+        startBtn.className = "theme-jace-btn";
+        submitBtn.className = "theme-jace-btn";
+        document.getElementById("reward").style.color = "#cc3700";
+    }
 }
 
-/* SUBTRACTION */
-else if(topic==="subtraction"){
-if(levelType==="young"){
-let a=rand(21); let b=rand(a+1); // NZC Level 1: Under 20, no negative answers
-correctAnswer=a-b;
-showQ(a+" - "+b);
-}else{
-let a=rand(90)+10; let b=rand(a+1); // NZC Level 2: 2-digit mental subtraction
-correctAnswer=a-b;
-showQ(a+" - "+b);
-}
-}
-
-/* MULTIPLICATION */
-else if(topic==="multiplication"){
-if(levelType==="young"){
-let tables=[2,5,10]; // NZC Level 1: Skip counting by 2, 5, 10
-let a=tables[rand(3)];
-let b=rand(11);
-correctAnswer=a*b;
-showQ(a+" × "+b);
-}else{
-let tables=[2,3,4,5,10]; // NZC Level 2: Times tables 2, 3, 4, 5, 10
-let a=tables[rand(tables.length)];
-let b=rand(11);
-correctAnswer=a*b;
-showQ(a+" × "+b);
-}
+function startGame() {
+    player = document.getElementById("player").value;
+    topic = document.getElementById("topic").value;
+    mode = document.getElementById("mode").value;
+    levelType = player === "clariza" ? "young" : "older";
+    
+    score = 0; xp = 0; levelNumber = 1; streak = 0; timeLeft = 60;
+    clearInterval(timerInterval);
+    
+    applyTheme(); // Ensure theme is set
+    updateDisplays();
+    newQuestion();
+    
+    if (mode === "timed") {
+        timerInterval = setInterval(updateTimer, 1000);
+    } else {
+        document.getElementById("timer").innerText = "Practice Mode";
+    }
 }
 
-/* DIVISION */
-else if(topic==="division"){
-if(levelType==="young"){
-let tables=[2,5,10];
-let b=tables[rand(3)];
-let a=rand(6); // Keep dividends very small for Year 2
-correctAnswer=a;
-showQ((a*b)+" ÷ "+b);
-}else{
-let tables=[2,3,4,5,10];
-let b=tables[rand(tables.length)];
-let a=rand(11);
-correctAnswer=a;
-showQ((a*b)+" ÷ "+b);
-}
+function updateTimer() {
+    timeLeft--;
+    document.getElementById("timer").innerText = "Time: " + timeLeft;
+    if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        alert("Time's up! Final Score: " + score);
+    }
 }
 
-/* FRACTIONS */
-else if(topic==="fractions"){
-if(levelType==="young"){
-let n=(rand(10)+1)*2; // NZC Level 1: Halves
-correctAnswer=n/2;
-showQ("Half of "+n);
-}else{
-let n=(rand(10)+1)*4; // NZC Level 2: Quarters
-correctAnswer=n/4;
-showQ("Quarter of "+n);
-}
+function updateDisplays() {
+    document.getElementById("score").innerText = "Score: " + score;
+    document.getElementById("streak").innerText = "Streak: " + streak + " 🔥";
+    document.getElementById("levelDisplay").innerText = "Level " + levelNumber;
+    document.getElementById("xpBar").style.width = (xp % 10) * 10 + "%";
 }
 
-/* MONEY */
-else if(topic==="money"){
-if(levelType==="young"){
-let a=rand(10)+1; let b=rand(10)+1;
-correctAnswer=a+b;
-showQ("$"+a+" + $"+b);
-}else{
-let a=rand(20)+1; let b=rand(20)+1; // Mental whole-dollar addition
-correctAnswer=a+b;
-showQ("$"+a+".00 + $"+b+".00");
-}
+function newQuestion() {
+    document.getElementById("reward").innerText = "";
+    document.getElementById("correction").innerText = "";
+    document.getElementById("answer").value = "";
+
+    /* ADDITION */
+    if(topic==="addition"){
+        if(levelType==="young"){
+            let a=rand(11); let b=rand(11); 
+            correctAnswer=a+b; showQ(a+" + "+b);
+        }else{
+            let a=rand(90)+10; let b=rand(90)+10; 
+            correctAnswer=a+b; showQ(a+" + "+b);
+        }
+    }
+    /* SUBTRACTION */
+    else if(topic==="subtraction"){
+        if(levelType==="young"){
+            let a=rand(21); let b=rand(a+1); 
+            correctAnswer=a-b; showQ(a+" - "+b);
+        }else{
+            let a=rand(90)+10; let b=rand(a+1); 
+            correctAnswer=a-b; showQ(a+" - "+b);
+        }
+    }
+    /* MULTIPLICATION */
+    else if(topic==="multiplication"){
+        if(levelType==="young"){
+            let tables=[2,5,10]; let a=tables[rand(3)]; let b=rand(11);
+            correctAnswer=a*b; showQ(a+" × "+b);
+        }else{
+            let tables=[2,3,4,5,10]; let a=tables[rand(tables.length)]; let b=rand(11);
+            correctAnswer=a*b; showQ(a+" × "+b);
+        }
+    }
+    /* DIVISION */
+    else if(topic==="division"){
+        if(levelType==="young"){
+            let tables=[2,5,10]; let b=tables[rand(3)]; let a=rand(6); 
+            correctAnswer=a; showQ((a*b)+" ÷ "+b);
+        }else{
+            let tables=[2,3,4,5,10]; let b=tables[rand(tables.length)]; let a=rand(11);
+            correctAnswer=a; showQ((a*b)+" ÷ "+b);
+        }
+    }
+    /* FRACTIONS */
+    else if(topic==="fractions"){
+        if(levelType==="young"){
+            let n=(rand(10)+1)*2; correctAnswer=n/2; showQ("Half of "+n);
+        }else{
+            let n=(rand(10)+1)*4; correctAnswer=n/4; showQ("Quarter of "+n);
+        }
+    }
+    /* MONEY */
+    else if(topic==="money"){
+        if(levelType==="young"){
+            let a=rand(10)+1; let b=rand(10)+1;
+            correctAnswer=a+b; showQ("$"+a+" + $"+b);
+        }else{
+            let a=rand(20)+1; let b=rand(20)+1; 
+            correctAnswer=a+b; showQ("$"+a+".00 + $"+b+".00");
+        }
+    }
+    /* TIME */
+    else if(topic==="time"){
+        if(levelType==="young"){
+            let h=rand(12)+1;
+            if(rand(2)===0){ correctAnswer=h+":00"; showQ(h+" o'clock"); }
+            else{ correctAnswer=h+":30"; showQ("Half past "+h); }
+        }else{
+            let h=rand(12)+1; let m=rand(12)*5; 
+            correctAnswer=h+":"+String(m).padStart(2,"0");
+            showQ(h+" hr "+m+" min = ?");
+        }
+    }
+    /* PATTERNS */
+    else if(topic==="patterns"){
+        if(levelType==="young"){
+            let start=rand(10)+1; let step=[2,5][rand(2)];
+            correctAnswer=start+3*step;
+            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?");
+        }else{
+            let start=rand(20)+1; let step=rand(10)+2;
+            correctAnswer=start+3*step;
+            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?");
+        }
+    }
+    /* GEOMETRY */
+    else if(topic==="geometry"){
+        let shapes=[ {name:"triangle",sides:3}, {name:"square",sides:4}, {name:"pentagon",sides:5}, {name:"hexagon",sides:6} ];
+        let s=shapes[rand(shapes.length)];
+        correctAnswer=s.sides; showQ("Sides on a "+s.name+"?");
+    }
+    /* MEASUREMENT */
+    else if(topic==="measurement"){
+        if(levelType==="young"){
+            let cm=rand(10)+1; correctAnswer=cm*10; showQ("mm in "+cm+" cm?");
+        }else{
+            let m=rand(5)+1; let cm=m*100; correctAnswer=m; showQ(cm+" cm = ? m");
+        }
+    }
+    /* ROUNDING */
+    else if(topic==="rounding"){
+        if(levelType==="young"){
+            let n=rand(50); correctAnswer=Math.round(n/10)*10; showQ("Round "+n+" to nearest 10");
+        }else{
+            let n=rand(1000);
+            if(rand(2)===0){ correctAnswer=Math.round(n/10)*10; showQ("Round "+n+" to 10"); }
+            else{ correctAnswer=Math.round(n/100)*100; showQ("Round "+n+" to 100"); }
+        }
+    }
+    /* LOGIC */
+    else if(topic==="logic"){
+        let a=rand(10)+1; let b=a+3; let c=b+3;
+        correctAnswer=c+3; showQ(a+", "+b+", "+c+", ?");
+    }
 }
 
-/* TIME */
-else if(topic==="time"){
-if(levelType==="young"){
-let h=rand(12)+1;
-if(rand(2)===0){
-correctAnswer=h+":00";
-showQ(h+" o'clock");
-}else{
-correctAnswer=h+":30";
-showQ("Half past "+h);
-}
-}else{
-let h=rand(12)+1;
-let m=rand(12)*5; // 5-minute intervals
-correctAnswer=h+":"+String(m).padStart(2,"0");
-showQ("Write time: "+h+" hour "+m+" mins");
-}
-}
+function showQ(t){ document.getElementById("question").innerText=t; }
 
-/* PATTERNS */
-else if(topic==="patterns"){
-if(levelType==="young"){
-let start=rand(10)+1;
-let step=[2,5][rand(2)];
-correctAnswer=start+3*step;
-showQ(start+", "+(start+step)+", "+(start+2*step)+", ?");
-}else{
-let start=rand(20)+1;
-let step=rand(10)+2;
-correctAnswer=start+3*step;
-showQ(start+", "+(start+step)+", "+(start+2*step)+", ?");
-}
-}
+function addNumber(n){ document.getElementById("answer").value+=n; }
+function clearAnswer(){ document.getElementById("answer").value=""; }
+function backspace(){ let v=document.getElementById("answer").value; document.getElementById("answer").value=v.slice(0,-1); }
 
-/* GEOMETRY */
-else if(topic==="geometry"){
-let shapes=[
-{name:"triangle",sides:3},
-{name:"square",sides:4},
-{name:"pentagon",sides:5},
-{name:"hexagon",sides:6}
-];
-let s=shapes[rand(shapes.length)];
-correctAnswer=s.sides;
-showQ("How many sides does a "+s.name+" have?");
-}
+function submitAnswer() {
+    let user = document.getElementById("answer").value.trim();
+    if (user === "") return;
 
-/* MEASUREMENT */
-else if(topic==="measurement"){
-if(levelType==="young"){
-let cm=rand(10)+1; // NZC Level 1: Standard uniform groupings
-correctAnswer=cm*10;
-showQ("How many mm in "+cm+" cm?");
-}else{
-let m=rand(5)+1; // NZC Level 2: Basic conversions (no decimals needed)
-let cm=m*100;
-correctAnswer=m;
-showQ(cm+" cm = ? m");
-}
-}
+    if (user == correctAnswer) {
+        score++; streak++; xp++;
+        // Give themed praise!
+        let randomPraise = currentRewards[rand(currentRewards.length)];
+        document.getElementById("reward").innerText = randomPraise;
+    } else {
+        streak = 0;
+        document.getElementById("reward").innerText = "❌ Oops!";
+        document.getElementById("correction").innerText = "Answer: " + correctAnswer;
+    }
 
-/* ROUNDING */
-else if(topic==="rounding"){
-if(levelType==="young"){
-let n=rand(50); // Keep numbers small
-correctAnswer=Math.round(n/10)*10;
-showQ("Round "+n+" to nearest 10");
-}else{
-let n=rand(1000);
-if(rand(2)===0){
-correctAnswer=Math.round(n/10)*10;
-showQ("Round "+n+" to nearest 10");
-}else{
-correctAnswer=Math.round(n/100)*100;
-showQ("Round "+n+" to nearest 100");
-}
-}
-}
+    if (xp % 10 === 0 && xp > 0) { levelNumber++; }
 
-/* LOGIC */
-else if(topic==="logic"){
-let a=rand(10)+1;
-let b=a+3;
-let c=b+3;
-correctAnswer=c+3;
-showQ(a+", "+b+", "+c+", ?");
-}
-
-}
-
-function showQ(t){document.getElementById("question").innerText=t;}
-
-function addNumber(n){document.getElementById("answer").value+=n;}
-function clearAnswer(){document.getElementById("answer").value="";}
-function backspace(){let v=document.getElementById("answer").value;document.getElementById("answer").value=v.slice(0,-1);}
-
-function submitAnswer(){
-let user=document.getElementById("answer").value.trim();
-if(user==="") return;
-
-// Use loose equality (==) so numbers and strings compare smoothly 
-if(user==correctAnswer){
-score++;streak++;xp++;
-document.getElementById("reward").innerText="⭐ Correct!";
-}else{
-streak=0;
-document.getElementById("reward").innerText="❌ Incorrect";
-document.getElementById("correction").innerText="Answer: "+correctAnswer;
-}
-
-if(xp%10===0 && xp>0){levelNumber++;}
-
-updateDisplays();
-setTimeout(newQuestion,1000);
+    updateDisplays();
+    setTimeout(newQuestion, 1200); // Wait a tiny bit longer so they can read the fun message
 }
 
 // Add keyboard support
-document.addEventListener("keydown",function(e){
-if(e.key>="0"&&e.key<="9"){addNumber(e.key);}
-if(e.key==="Backspace"){backspace();}
-if(e.key==="Enter"){submitAnswer();}
-if(e.key==="Escape"){clearAnswer();}
-if(e.key==="."){addNumber(".");}
-if(e.key===":"){addNumber(":");}
+document.addEventListener("keydown", function(e) {
+    if(e.key>="0" && e.key<="9") { addNumber(e.key); }
+    if(e.key==="Backspace") { backspace(); }
+    if(e.key==="Enter") { submitAnswer(); }
+    if(e.key==="Escape") { clearAnswer(); }
+    if(e.key===".") { addNumber("."); }
+    if(e.key===":") { addNumber(":"); }
 });
 
-// Start initial practice mode so screen isn't empty
-document.getElementById("timer").innerText="Choose mode & press Start";
+// Run theme setup on first load
+applyTheme();
 
 </script>
 
