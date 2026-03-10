@@ -7,39 +7,28 @@
 <!-- Confetti Library -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-<!-- 3 Fun Fonts that will change daily -->
+<!-- 3 Fun Fonts that change daily -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
 body {
-    /* Font will be injected via Javascript based on the day */
-    text-align: center;
-    margin: 0;
-    padding: 10px;
-    background: #e9f6ff;
-    transition: background 0.5s ease, font-family 0.5s ease;
+    text-align: center; margin: 0; padding: 10px;
+    background: #e9f6ff; transition: background 0.5s ease, font-family 0.5s ease;
 }
 
 #gameContainer {
-    background: rgba(255, 255, 255, 0.92);
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px 10px;
-    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.92); max-width: 400px;
+    margin: 0 auto; padding: 20px 10px; border-radius: 20px;
     box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
 }
 
 h1 { margin-top: 5px; font-size: 28px; }
 
 select, button, input {
-    font-family: inherit; /* Inherits the daily font */
-    font-size: 16px;
-    padding: 8px;
-    margin: 4px;
-    border-radius: 8px;
-    border: 2px solid #ccc;
+    font-family: inherit; font-size: 16px; padding: 8px; margin: 4px;
+    border-radius: 8px; border: 2px solid #ccc;
 }
 
 #question { font-size: 32px; font-weight: bold; color: #333; margin: 0; }
@@ -49,17 +38,10 @@ select, button, input {
 
 #keypad { display: grid; grid-template-columns: repeat(4, 70px); gap: 8px; justify-content: center; margin: 15px auto; }
 .key {
-    font-size: 24px;
-    font-weight: bold;
-    padding: 12px;
-    background: white;
-    border-radius: 12px;
-    border: 2px solid #bbb;
-    cursor: pointer;
-    box-shadow: 0px 4px 0px #bbb;
-    transition: transform 0.1s, box-shadow 0.1s;
-    user-select: none;
-    font-family: inherit;
+    font-size: 24px; font-weight: bold; padding: 12px; background: white;
+    border-radius: 12px; border: 2px solid #bbb; cursor: pointer;
+    box-shadow: 0px 4px 0px #bbb; transition: transform 0.1s, box-shadow 0.1s;
+    user-select: none; font-family: inherit;
 }
 .key:active { transform: translateY(4px); box-shadow: 0px 0px 0px #bbb; }
 
@@ -76,19 +58,24 @@ select, button, input {
 #speakerBtn:hover { transform: scale(1.2); }
 #speakerBtn:active { transform: scale(0.9); }
 
+/* PS5 Tracker Animation */
+@keyframes pulseGreen {
+    0% { transform: scale(1); color: #333; }
+    50% { transform: scale(1.1); color: #4CAF50; }
+    100% { transform: scale(1); color: #333; }
+}
+.pulse-anim { animation: pulseGreen 0.6s ease; }
+
 /* Custom Modal Victory Screen */
 #gameOverModal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.7); z-index: 1000;
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
 }
 #modalContent {
-    background: white; padding: 30px; border-radius: 25px;
-    text-align: center; max-width: 85%; width: 320px;
-    box-shadow: 0px 15px 30px rgba(0,0,0,0.5);
-    border: 5px solid #ffcc00;
-    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: white; padding: 30px; border-radius: 25px; text-align: center;
+    max-width: 85%; width: 320px; box-shadow: 0px 15px 30px rgba(0,0,0,0.5);
+    border: 5px solid #ffcc00; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 #modalTitle { font-size: 28px; margin-top: 0; color: #333; }
@@ -178,6 +165,12 @@ select, button, input {
         <div id="streak" style="font-weight:bold; font-size:18px; color:#ff8c00;">Streak: 0 🔥</div>
     </div>
     
+    <!-- PS5 TIME TRACKER -->
+    <div style="background: rgba(0,0,0,0.05); border: 2px dashed #999; border-radius: 12px; padding: 10px; margin-top: 15px;">
+        <div id="ps5TimeDisplay" style="font-weight:bold; font-size:22px; color:#333;">🎮 PS5 Time: 0 mins</div>
+        <div style="font-size:12px; color:#777; margin-top:2px;">(1 correct answer = 2 mins. Resets Sunday)</div>
+    </div>
+
     <div id="timer" style="font-weight:bold; font-size:18px; margin-top:10px; color:#555;">Choose mode & press Start</div>
 
 </div>
@@ -201,33 +194,47 @@ let isGameOverState = true;
 
 const allTopics = ["addition", "subtraction", "multiplication", "division", "fractions", "money", "time", "patterns", "geometry", "measurement", "rounding", "logic"];
 
+// --- PS5 TRACKER & SUNDAY RESET LOGIC ---
+function getMostRecentSunday() {
+    let d = new Date();
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate() - d.getDay()); // getDay() is 0 for Sunday
+    return d.getTime();
+}
+
 let highScores = JSON.parse(localStorage.getItem("mathGameHighScores")) || { clariza: 0, jace: 0 };
+let ps5Data = JSON.parse(localStorage.getItem("mathGamePS5Time"));
+let currentSunday = getMostRecentSunday();
+
+// If it's a new week (or first time playing), reset PS5 time to 0!
+if (!ps5Data || ps5Data.weekOf !== currentSunday) {
+    ps5Data = { weekOf: currentSunday, clariza: 0, jace: 0 };
+    localStorage.setItem("mathGamePS5Time", JSON.stringify(ps5Data));
+}
 
 // --- DAILY ROTATION LOGIC ---
-const dayOfWeek = new Date().getDay(); // Returns 0 (Sun) to 6 (Sat)
+const dayOfWeek = new Date().getDay(); 
 const fonts = ["'Fredoka', sans-serif", "'Bubblegum Sans', cursive", "'Comic Neue', cursive"];
-const dailyFont = fonts[dayOfWeek % 3]; // Cycles 3 fonts throughout the week
+const dailyFont = fonts[dayOfWeek % 3]; 
 
-// 7 Themes for Clariza
 const clarizaDaily = [
-    { title: "🦄 Clariza's Math 🐶", praises: ["Magic! 🦄", "Wackadoo! 🐶", "Sparkly! ✨", "Hooray! 🌈"] }, // Sun
-    { title: "🧜‍♀️ Clariza's Math 🐚", praises: ["Splash! 🌊", "Mer-mazing! 🧜‍♀️", "Beautiful! 🐚", "Wow! 🐠"] }, // Mon
-    { title: "🧚‍♀️ Clariza's Math 🌸", praises: ["Fairy Dust! ✨", "So Pretty! 🌸", "Magical! 🧚‍♀️", "Flutter! 🍃"] }, // Tue
-    { title: "👸 Clariza's Math 🏰", praises: ["Royal! 👑", "Princess! 👸", "Majestic! 🏰", "Sparkle! 💎"] }, // Wed
-    { title: "🌈 Clariza's Math ⭐", praises: ["Glowing! 🌟", "Radiant! 🌈", "Super Star! ⭐", "Bright! ☀️"] }, // Thu
-    { title: "🦋 Clariza's Math 🐞", praises: ["Fluttery! 🦋", "Cute! 🐞", "Sweet! 🌷", "Hooray! 🐝"] }, // Fri
-    { title: "🐱 Clariza's Math 🐾", praises: ["Purr-fect! 🐱", "Puppy Love! 🐶", "Meow! 🐾", "So Cute! 🐰"] }  // Sat
+    { title: "🦄 Clariza's Math 🐶", praises: ["Magic! 🦄", "Wackadoo! 🐶", "Sparkly! ✨", "Hooray! 🌈"] }, 
+    { title: "🧜‍♀️ Clariza's Math 🐚", praises: ["Splash! 🌊", "Mer-mazing! 🧜‍♀️", "Beautiful! 🐚", "Wow! 🐠"] }, 
+    { title: "🧚‍♀️ Clariza's Math 🌸", praises: ["Fairy Dust! ✨", "So Pretty! 🌸", "Magical! 🧚‍♀️", "Flutter! 🍃"] }, 
+    { title: "👸 Clariza's Math 🏰", praises: ["Royal! 👑", "Princess! 👸", "Majestic! 🏰", "Sparkle! 💎"] }, 
+    { title: "🌈 Clariza's Math ⭐", praises: ["Glowing! 🌟", "Radiant! 🌈", "Super Star! ⭐", "Bright! ☀️"] }, 
+    { title: "🦋 Clariza's Math 🐞", praises: ["Fluttery! 🦋", "Cute! 🐞", "Sweet! 🌷", "Hooray! 🐝"] }, 
+    { title: "🐱 Clariza's Math 🐾", praises: ["Purr-fect! 🐱", "Puppy Love! 🐶", "Meow! 🐾", "So Cute! 🐰"] }  
 ];
 
-// 7 Themes for Jace
 const jaceDaily = [
-    { title: "🦖 Jace's Math 🏎️", praises: ["Roar-some! 🦖", "Turbo Speed! 🏎️", "Vroom! 🏁", "Dino-mite! 🦕"] }, // Sun
-    { title: "🚀 Jace's Math 👽", praises: ["Blast Off! 🚀", "Out of this World! 🛸", "Alien Tech! 👽", "Cosmic! ☄️"] }, // Mon
-    { title: "🤖 Jace's Math ⚙️", praises: ["System Go! 🔋", "Robot Power! 🤖", "Glitch Free! 💻", "Mechanical! ⚙️"] }, // Tue
-    { title: "🦸‍♂️ Jace's Math ⚡", praises: ["Heroic! 💥", "Super Strength! 🦸‍♂️", "ZAP! ⚡", "POW! 🥊"] }, // Wed
-    { title: "🥷 Jace's Math 🐉", praises: ["Stealthy! 🥷", "Dragon Fire! 🐉", "Ninja Moves! 🗡️", "Swift! 🌪️"] }, // Thu
-    { title: "🧟 Jace's Math 👻", praises: ["Spooky! 👻", "Monster Mash! 🧟", "Slime Time! 🦠", "Boo! 🎃"] }, // Fri
-    { title: "🏴‍☠️ Jace's Math 🪙", praises: ["Arrrgh! 🏴‍☠️", "Treasure! 💎", "Ahoy! ⚓", "Gold! 🪙"] } // Sat
+    { title: "🦖 Jace's Math 🏎️", praises: ["Roar-some! 🦖", "Turbo Speed! 🏎️", "Vroom! 🏁", "Dino-mite! 🦕"] }, 
+    { title: "🚀 Jace's Math 👽", praises: ["Blast Off! 🚀", "Out of this World! 🛸", "Alien Tech! 👽", "Cosmic! ☄️"] }, 
+    { title: "🤖 Jace's Math ⚙️", praises: ["System Go! 🔋", "Robot Power! 🤖", "Glitch Free! 💻", "Mechanical! ⚙️"] }, 
+    { title: "🦸‍♂️ Jace's Math ⚡", praises: ["Heroic! 💥", "Super Strength! 🦸‍♂️", "ZAP! ⚡", "POW! 🥊"] }, 
+    { title: "🥷 Jace's Math 🐉", praises: ["Stealthy! 🥷", "Dragon Fire! 🐉", "Ninja Moves! 🗡️", "Swift! 🌪️"] }, 
+    { title: "🧟 Jace's Math 👻", praises: ["Spooky! 👻", "Monster Mash! 🧟", "Slime Time! 🦠", "Boo! 🎃"] }, 
+    { title: "🏴‍☠️ Jace's Math 🪙", praises: ["Arrrgh! 🏴‍☠️", "Treasure! 💎", "Ahoy! ⚓", "Gold! 🪙"] } 
 ];
 
 let currentRewards = [];
@@ -263,7 +270,6 @@ function applyTheme() {
     let xpBar = document.getElementById("xpBar");
     let playAgainBtn = document.getElementById("playAgainBtn");
 
-    // Apply the Daily Font
     document.body.style.fontFamily = dailyFont;
 
     if (p === "clariza") {
@@ -285,12 +291,7 @@ function applyTheme() {
         playAgainBtn.className = "theme-jace-btn";
         document.getElementById("reward").style.color = "#cc3700";
     }
-    updateHighScoresDisplay();
-}
-
-function updateHighScoresDisplay() {
-    let p = document.getElementById("player").value;
-    document.getElementById("highScoreDisplay").innerText = "Best: " + (highScores[p] || 0) + " 🏆";
+    updateDisplays();
 }
 
 function startGame() {
@@ -359,7 +360,7 @@ function triggerGameOver() {
         stars = "⭐⭐⭐";
     }
 
-    updateHighScoresDisplay();
+    updateDisplays();
 
     document.getElementById("modalTitle").innerText = title;
     document.getElementById("modalStars").innerText = stars;
@@ -383,10 +384,27 @@ function closeModal() {
 }
 
 function updateDisplays() {
+    let p = document.getElementById("player").value;
+
     document.getElementById("score").innerText = "Score: " + score;
+    document.getElementById("highScoreDisplay").innerText = "Best: " + (highScores[p] || 0) + " 🏆";
     document.getElementById("streak").innerText = "Streak: " + streak + " 🔥";
     document.getElementById("levelDisplay").innerText = "Level " + levelNumber;
     document.getElementById("xpBar").style.width = (xp % 10) * 10 + "%";
+
+    // Format PS5 Time into Hours and Minutes
+    let totalMins = ps5Data[p];
+    let hrs = Math.floor(totalMins / 60);
+    let mins = totalMins % 60;
+    let timeString = hrs > 0 ? hrs + " hr " + mins + " mins" : mins + " mins";
+    document.getElementById("ps5TimeDisplay").innerText = "🎮 PS5 Time: " + timeString;
+}
+
+function animatePS5Tracker() {
+    let ps5El = document.getElementById("ps5TimeDisplay");
+    ps5El.classList.remove("pulse-anim");
+    void ps5El.offsetWidth; // Trigger reflow so animation restarts
+    ps5El.classList.add("pulse-anim");
 }
 
 function showQ(displayTxt, speechTxt) {
@@ -508,9 +526,16 @@ function submitAnswer() {
 
     if (user == correctAnswer) {
         score++; streak++; xp++;
+        
+        // Add PS5 Time!
+        let p = document.getElementById("player").value;
+        ps5Data[p] += 2;
+        localStorage.setItem("mathGamePS5Time", JSON.stringify(ps5Data));
+        animatePS5Tracker();
+
         playSound("win");
         let randomPraise = currentRewards[rand(currentRewards.length)];
-        document.getElementById("reward").innerText = randomPraise;
+        document.getElementById("reward").innerText = randomPraise + " (+2m)";
     } else {
         streak = 0;
         playSound("lose");
@@ -543,7 +568,7 @@ document.addEventListener("keydown", function(e) {
     if(e.key===":") { addNumber(":"); }
 });
 
-// Run once on load to set today's theme
+// Run once on load to set today's theme and PS5 tracker
 applyTheme();
 
 </script>
