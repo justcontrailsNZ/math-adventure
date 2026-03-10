@@ -25,7 +25,6 @@ margin:5px;
 #character{font-size:60px;margin:5px;}
 #question{font-size:28px;margin:15px;}
 #reward{font-size:28px;height:35px;}
-#world{font-weight:bold;margin:8px;}
 
 #answer{
 font-size:28px;
@@ -54,7 +53,6 @@ user-select:none;
 .key:active{
 background:#ddd;
 }
-
 </style>
 </head>
 
@@ -64,8 +62,8 @@ background:#ddd;
 
 Player
 <select id="player">
-<option value="clariza">Clariza </option>
-<option value="jace">Jace (</option>
+<option value="clariza">Clariza (Year 2)</option>
+<option value="jace">Jace (Year 4)</option>
 </select>
 
 Topic
@@ -85,9 +83,7 @@ Mode
 <br>
 <button onclick="startGame()">Start Adventure</button>
 
-<div id="world"></div>
 <div id="character"></div>
-
 <div id="question"></div>
 <div id="reward"></div>
 
@@ -129,7 +125,29 @@ let mode="";
 let timeLeft=60;
 let timerInterval=null;
 
+/* ✅ SOUND SYSTEM */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq,duration){
+let osc = audioCtx.createOscillator();
+let gain = audioCtx.createGain();
+
+osc.frequency.value=freq;
+osc.type="sine";
+
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+
+osc.start();
+gain.gain.setValueAtTime(0.3,audioCtx.currentTime);
+osc.stop(audioCtx.currentTime+duration);
+}
+
+/* ✅ START GAME */
 function startGame(){
+
+// unlock audio on first interaction (tablet requirement)
+audioCtx.resume();
 
 player=document.getElementById("player").value;
 topic=document.getElementById("topic").value;
@@ -208,14 +226,17 @@ clearAnswer();
 }
 
 function addNumber(num){
+playTone(500,0.05);
 document.getElementById("answer").value+=num;
 }
 
 function clearAnswer(){
+playTone(300,0.05);
 document.getElementById("answer").value="";
 }
 
 function backspace(){
+playTone(300,0.05);
 let val=document.getElementById("answer").value;
 document.getElementById("answer").value=val.slice(0,-1);
 }
@@ -228,16 +249,18 @@ if(parseFloat(user)===correctAnswer){
 score++;
 streak++;
 document.getElementById("reward").innerText="⭐";
+playTone(800,0.2); // correct sound
 }else{
 streak=0;
 document.getElementById("reward").innerText="❌";
+playTone(150,0.3); // wrong sound
 }
 
 updateDisplays();
 setTimeout(newQuestion,600);
 }
 
-/* ✅ Keyboard support */
+/* ✅ Keyboard Support */
 document.addEventListener("keydown",function(e){
 
 if(e.key>="0" && e.key<="9"){
@@ -257,7 +280,6 @@ clearAnswer();
 }
 
 });
-
 </script>
 
 </body>
