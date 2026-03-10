@@ -14,10 +14,9 @@ body {
     margin: 0;
     padding: 10px;
     background: #e9f6ff;
-    transition: background 0.5s ease; /* Smooth background transition */
+    transition: background 0.5s ease;
 }
 
-/* Game container to make it pop against the background */
 #gameContainer {
     background: rgba(255, 255, 255, 0.92);
     max-width: 400px;
@@ -38,7 +37,7 @@ select, button, input {
     border: 2px solid #ccc;
 }
 
-#question { font-size: 32px; margin: 15px; font-weight: bold; color: #333; }
+#question { font-size: 32px; font-weight: bold; color: #333; margin: 0; }
 #answer { font-size: 28px; width: 160px; text-align: center; border: 3px solid #ccc; }
 #reward { font-size: 24px; height: 30px; font-weight: bold; margin-bottom: 5px;}
 #correction { color: #c00; height: 20px; font-weight: bold; font-size: 18px; }
@@ -63,9 +62,22 @@ select, button, input {
 #xpBarContainer { width: 250px; height: 20px; background: #ddd; margin: 10px auto; border-radius: 10px; overflow: hidden; border: 2px solid #999;}
 #xpBar { height: 100%; width: 0%; background: limegreen; border-radius: 10px; transition: width 0.3s; }
 
-/* Themed UI Classes */
 .theme-jace-btn { background: #ff4500 !important; color: white !important; border-color: #cc3700 !important; }
 .theme-clariza-btn { background: #ff69b4 !important; color: white !important; border-color: #d1478e !important; }
+
+/* Speaker Button */
+#speakerBtn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: transform 0.2s;
+    box-shadow: none;
+    padding: 0;
+}
+#speakerBtn:hover { transform: scale(1.2); }
+#speakerBtn:active { transform: scale(0.9); }
 
 </style>
 </head>
@@ -108,7 +120,12 @@ select, button, input {
     <div id="levelDisplay" style="margin-top:15px; font-weight:bold; font-size:18px;">Level 1</div>
     <div id="xpBarContainer"><div id="xpBar"></div></div>
 
-    <div id="question">?</div>
+    <!-- Question + Speaker Button Area -->
+    <div style="display:flex; justify-content:center; align-items:center; margin: 15px 0;">
+        <div id="question">?</div>
+        <button id="speakerBtn" onclick="speakQuestion()" title="Read Out Loud">🔊</button>
+    </div>
+
     <div id="reward"></div>
     <div id="correction"></div>
 
@@ -130,18 +147,21 @@ select, button, input {
         <div class="key" onclick="addNumber('9')">9</div>
         <div class="key" onclick="addNumber('.')">.</div>
 
-        <div style="visibility:hidden;"></div> <!-- Spacer -->
+        <div style="visibility:hidden;"></div>
         <div class="key" onclick="addNumber('0')">0</div>
-        <div style="visibility:hidden;"></div> <!-- Spacer -->
+        <div style="visibility:hidden;"></div>
         <div class="key" onclick="addNumber(':')">:</div>
     </div>
 
     <button id="submitBtn" style="background:#4CAF50; color:white; font-weight:bold; font-size:20px; padding:10px 30px; cursor:pointer; border-radius:12px;" onclick="submitAnswer()">Submit ✅</button>
 
-    <div style="display:flex; justify-content:space-between; margin-top:20px; padding:0 20px;">
+    <!-- Stats Area (Now includes Best Score!) -->
+    <div style="display:flex; justify-content:space-between; margin-top:20px; padding:0 15px;">
         <div id="score" style="font-weight:bold; font-size:18px; color:#333;">Score: 0</div>
-        <div id="streak" style="font-weight:bold; font-size:18px; color:#ff8c00;">Streak: 0</div>
+        <div id="highScoreDisplay" style="font-weight:bold; font-size:18px; color:#555;">Best: 0 🏆</div>
+        <div id="streak" style="font-weight:bold; font-size:18px; color:#ff8c00;">Streak: 0 🔥</div>
     </div>
+    
     <div id="timer" style="font-weight:bold; font-size:18px; margin-top:10px; color:#555;">Choose mode & press Start</div>
 
 </div>
@@ -150,15 +170,17 @@ select, button, input {
 let score=0, xp=0, levelNumber=1, streak=0;
 let correctAnswer=0, player="", levelType="", topic="", mode="";
 let timeLeft=60, timerInterval=null;
+let currentSpeechText = "";
 
-// Themed arrays for rewards
+// High Scores stored in browser memory
+let highScores = JSON.parse(localStorage.getItem("mathGameHighScores")) || { clariza: 0, jace: 0 };
+
 let clarizaRewards = ["Magic! 🦄", "Wackadoo! 🐶", "Sparkly! ✨", "Hooray! 🌈", "Super! 🎈"];
 let jaceRewards = ["Roar-some! 🦖", "Turbo Speed! 🏎️", "Vroom! 🏁", "Dino-mite! 🦕", "On Fire! 🔥"];
 let currentRewards = [];
 
 function rand(max) { return Math.floor(Math.random()*max); }
 
-// Apply Theme based on who is playing
 function applyTheme() {
     let p = document.getElementById("player").value;
     let startBtn = document.getElementById("startBtn");
@@ -166,28 +188,28 @@ function applyTheme() {
     let xpBar = document.getElementById("xpBar");
 
     if (p === "clariza") {
-        document.body.style.background = "linear-gradient(135deg, #A1C4FD 0%, #ffafbd 100%)"; // Bluey blue to Unicorn pink
+        document.body.style.background = "linear-gradient(135deg, #A1C4FD 0%, #ffafbd 100%)";
         document.getElementById("gameTitle").innerText = "🦄 Clariza's Math 🐶";
         currentRewards = clarizaRewards;
-        
-        // Rainbow XP Bar
         xpBar.style.background = "linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)";
-        
         startBtn.className = "theme-clariza-btn";
         submitBtn.className = "theme-clariza-btn";
         document.getElementById("reward").style.color = "#d1478e";
     } else {
-        document.body.style.background = "linear-gradient(135deg, #f12711 0%, #f5af19 100%)"; // Hot wheels fire / Dino colors
+        document.body.style.background = "linear-gradient(135deg, #f12711 0%, #f5af19 100%)";
         document.getElementById("gameTitle").innerText = "🦖 Jace's Math 🏎️";
         currentRewards = jaceRewards;
-        
-        // Racing Finish Line XP Bar
         xpBar.style.background = "repeating-linear-gradient(45deg, #000, #000 10px, #fff 10px, #fff 20px)";
-        
         startBtn.className = "theme-jace-btn";
         submitBtn.className = "theme-jace-btn";
         document.getElementById("reward").style.color = "#cc3700";
     }
+    updateHighScoresDisplay();
+}
+
+function updateHighScoresDisplay() {
+    let p = document.getElementById("player").value;
+    document.getElementById("highScoreDisplay").innerText = "Best: " + (highScores[p] || 0) + " 🏆";
 }
 
 function startGame() {
@@ -199,7 +221,7 @@ function startGame() {
     score = 0; xp = 0; levelNumber = 1; streak = 0; timeLeft = 60;
     clearInterval(timerInterval);
     
-    applyTheme(); // Ensure theme is set
+    applyTheme();
     updateDisplays();
     newQuestion();
     
@@ -215,7 +237,20 @@ function updateTimer() {
     document.getElementById("timer").innerText = "Time: " + timeLeft;
     if (timeLeft <= 0) {
         clearInterval(timerInterval);
-        alert("Time's up! Final Score: " + score);
+        endGame();
+    }
+}
+
+function endGame() {
+    let p = document.getElementById("player").value;
+    // Check if they broke their High Score!
+    if (mode === "timed" && score > highScores[p]) {
+        highScores[p] = score;
+        localStorage.setItem("mathGameHighScores", JSON.stringify(highScores));
+        alert("🎉 INCREDIBLE! NEW HIGH SCORE: " + score + " points! 🎉");
+        updateHighScoresDisplay();
+    } else {
+        alert("⏰ Time's up! Final Score: " + score);
     }
 }
 
@@ -226,52 +261,62 @@ function updateDisplays() {
     document.getElementById("xpBar").style.width = (xp % 10) * 10 + "%";
 }
 
+// showQ now accepts a special text parameter so the Text-to-Speech knows how to say math symbols out loud properly
+function showQ(displayTxt, speechTxt) {
+    document.getElementById("question").innerText = displayTxt;
+    currentSpeechText = speechTxt || displayTxt; 
+}
+
+function speakQuestion() {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Stop any current speech
+        let utterance = new SpeechSynthesisUtterance(currentSpeechText);
+        utterance.rate = 0.9; // Read slightly slower so it's easy for kids to understand
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
 function newQuestion() {
     document.getElementById("reward").innerText = "";
     document.getElementById("correction").innerText = "";
     document.getElementById("answer").value = "";
 
-    /* ADDITION */
     if(topic==="addition"){
         if(levelType==="young"){
-            let a=rand(11); let b=rand(11); 
-            correctAnswer=a+b; showQ(a+" + "+b);
+            let a=rand(11); let b=rand(11); correctAnswer=a+b; 
+            showQ(a+" + "+b, a+" plus "+b);
         }else{
-            let a=rand(90)+10; let b=rand(90)+10; 
-            correctAnswer=a+b; showQ(a+" + "+b);
+            let a=rand(90)+10; let b=rand(90)+10; correctAnswer=a+b; 
+            showQ(a+" + "+b, a+" plus "+b);
         }
     }
-    /* SUBTRACTION */
     else if(topic==="subtraction"){
         if(levelType==="young"){
-            let a=rand(21); let b=rand(a+1); 
-            correctAnswer=a-b; showQ(a+" - "+b);
+            let a=rand(21); let b=rand(a+1); correctAnswer=a-b; 
+            showQ(a+" - "+b, a+" minus "+b);
         }else{
-            let a=rand(90)+10; let b=rand(a+1); 
-            correctAnswer=a-b; showQ(a+" - "+b);
+            let a=rand(90)+10; let b=rand(a+1); correctAnswer=a-b; 
+            showQ(a+" - "+b, a+" minus "+b);
         }
     }
-    /* MULTIPLICATION */
     else if(topic==="multiplication"){
         if(levelType==="young"){
-            let tables=[2,5,10]; let a=tables[rand(3)]; let b=rand(11);
-            correctAnswer=a*b; showQ(a+" × "+b);
+            let tables=[2,5,10]; let a=tables[rand(3)]; let b=rand(11); correctAnswer=a*b; 
+            showQ(a+" × "+b, a+" times "+b);
         }else{
-            let tables=[2,3,4,5,10]; let a=tables[rand(tables.length)]; let b=rand(11);
-            correctAnswer=a*b; showQ(a+" × "+b);
+            let tables=[2,3,4,5,10]; let a=tables[rand(tables.length)]; let b=rand(11); correctAnswer=a*b; 
+            showQ(a+" × "+b, a+" times "+b);
         }
     }
-    /* DIVISION */
     else if(topic==="division"){
         if(levelType==="young"){
-            let tables=[2,5,10]; let b=tables[rand(3)]; let a=rand(6); 
-            correctAnswer=a; showQ((a*b)+" ÷ "+b);
+            let tables=[2,5,10]; let b=tables[rand(3)]; let a=rand(6); correctAnswer=a; 
+            showQ((a*b)+" ÷ "+b, (a*b)+" divided by "+b);
         }else{
-            let tables=[2,3,4,5,10]; let b=tables[rand(tables.length)]; let a=rand(11);
-            correctAnswer=a; showQ((a*b)+" ÷ "+b);
+            let tables=[2,3,4,5,10]; let b=tables[rand(tables.length)]; let a=rand(11); correctAnswer=a; 
+            showQ((a*b)+" ÷ "+b, (a*b)+" divided by "+b);
         }
     }
-    /* FRACTIONS */
     else if(topic==="fractions"){
         if(levelType==="young"){
             let n=(rand(10)+1)*2; correctAnswer=n/2; showQ("Half of "+n);
@@ -279,17 +324,15 @@ function newQuestion() {
             let n=(rand(10)+1)*4; correctAnswer=n/4; showQ("Quarter of "+n);
         }
     }
-    /* MONEY */
     else if(topic==="money"){
         if(levelType==="young"){
-            let a=rand(10)+1; let b=rand(10)+1;
-            correctAnswer=a+b; showQ("$"+a+" + $"+b);
+            let a=rand(10)+1; let b=rand(10)+1; correctAnswer=a+b; 
+            showQ("$"+a+" + $"+b, a+" dollars plus "+b+" dollars");
         }else{
-            let a=rand(20)+1; let b=rand(20)+1; 
-            correctAnswer=a+b; showQ("$"+a+".00 + $"+b+".00");
+            let a=rand(20)+1; let b=rand(20)+1; correctAnswer=a+b; 
+            showQ("$"+a+".00 + $"+b+".00", a+" dollars plus "+b+" dollars");
         }
     }
-    /* TIME */
     else if(topic==="time"){
         if(levelType==="young"){
             let h=rand(12)+1;
@@ -298,53 +341,46 @@ function newQuestion() {
         }else{
             let h=rand(12)+1; let m=rand(12)*5; 
             correctAnswer=h+":"+String(m).padStart(2,"0");
-            showQ(h+" hr "+m+" min = ?");
+            showQ(h+" hr "+m+" min = ?", "Write the time for "+h+" hours and "+m+" minutes");
         }
     }
-    /* PATTERNS */
     else if(topic==="patterns"){
         if(levelType==="young"){
-            let start=rand(10)+1; let step=[2,5][rand(2)];
-            correctAnswer=start+3*step;
-            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?");
+            let start=rand(10)+1; let step=[2,5][rand(2)]; correctAnswer=start+3*step;
+            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?", "What comes next? "+start+", "+(start+step)+", "+(start+2*step));
         }else{
-            let start=rand(20)+1; let step=rand(10)+2;
-            correctAnswer=start+3*step;
-            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?");
+            let start=rand(20)+1; let step=rand(10)+2; correctAnswer=start+3*step;
+            showQ(start+", "+(start+step)+", "+(start+2*step)+", ?", "What comes next? "+start+", "+(start+step)+", "+(start+2*step));
         }
     }
-    /* GEOMETRY */
     else if(topic==="geometry"){
         let shapes=[ {name:"triangle",sides:3}, {name:"square",sides:4}, {name:"pentagon",sides:5}, {name:"hexagon",sides:6} ];
-        let s=shapes[rand(shapes.length)];
-        correctAnswer=s.sides; showQ("Sides on a "+s.name+"?");
+        let s=shapes[rand(shapes.length)]; correctAnswer=s.sides; 
+        showQ("Sides on a "+s.name+"?", "How many sides does a "+s.name+" have?");
     }
-    /* MEASUREMENT */
     else if(topic==="measurement"){
         if(levelType==="young"){
-            let cm=rand(10)+1; correctAnswer=cm*10; showQ("mm in "+cm+" cm?");
+            let cm=rand(10)+1; correctAnswer=cm*10; 
+            showQ("mm in "+cm+" cm?", "How many millimeters are in "+cm+" centimeters?");
         }else{
-            let m=rand(5)+1; let cm=m*100; correctAnswer=m; showQ(cm+" cm = ? m");
+            let m=rand(5)+1; let cm=m*100; correctAnswer=m; 
+            showQ(cm+" cm = ? m", "How many meters is "+cm+" centimeters?");
         }
     }
-    /* ROUNDING */
     else if(topic==="rounding"){
         if(levelType==="young"){
             let n=rand(50); correctAnswer=Math.round(n/10)*10; showQ("Round "+n+" to nearest 10");
         }else{
             let n=rand(1000);
-            if(rand(2)===0){ correctAnswer=Math.round(n/10)*10; showQ("Round "+n+" to 10"); }
-            else{ correctAnswer=Math.round(n/100)*100; showQ("Round "+n+" to 100"); }
+            if(rand(2)===0){ correctAnswer=Math.round(n/10)*10; showQ("Round "+n+" to 10", "Round "+n+" to the nearest 10"); }
+            else{ correctAnswer=Math.round(n/100)*100; showQ("Round "+n+" to 100", "Round "+n+" to the nearest 100"); }
         }
     }
-    /* LOGIC */
     else if(topic==="logic"){
-        let a=rand(10)+1; let b=a+3; let c=b+3;
-        correctAnswer=c+3; showQ(a+", "+b+", "+c+", ?");
+        let a=rand(10)+1; let b=a+3; let c=b+3; correctAnswer=c+3; 
+        showQ(a+", "+b+", "+c+", ?", "What comes next? "+a+", "+b+", "+c);
     }
 }
-
-function showQ(t){ document.getElementById("question").innerText=t; }
 
 function addNumber(n){ document.getElementById("answer").value+=n; }
 function clearAnswer(){ document.getElementById("answer").value=""; }
@@ -356,7 +392,6 @@ function submitAnswer() {
 
     if (user == correctAnswer) {
         score++; streak++; xp++;
-        // Give themed praise!
         let randomPraise = currentRewards[rand(currentRewards.length)];
         document.getElementById("reward").innerText = randomPraise;
     } else {
@@ -368,10 +403,9 @@ function submitAnswer() {
     if (xp % 10 === 0 && xp > 0) { levelNumber++; }
 
     updateDisplays();
-    setTimeout(newQuestion, 1200); // Wait a tiny bit longer so they can read the fun message
+    setTimeout(newQuestion, 1200);
 }
 
-// Add keyboard support
 document.addEventListener("keydown", function(e) {
     if(e.key>="0" && e.key<="9") { addNumber(e.key); }
     if(e.key==="Backspace") { backspace(); }
@@ -381,7 +415,6 @@ document.addEventListener("keydown", function(e) {
     if(e.key===":") { addNumber(":"); }
 });
 
-// Run theme setup on first load
 applyTheme();
 
 </script>
